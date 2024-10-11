@@ -1,0 +1,195 @@
+/*
+EEEN20011 - Example Program â€“ Sequencer
+
+PLEASE NOTE THAT THIS PROGRAM FEATURES FLASHING LEDs. If you are have any concerns about this then please let me know before executing the program and I will suggest some 
+alternative values to significantly reduce the flashing frequency (to several seconds).
+
+This program uses the Nucleo-64 board and the Application Shield.
+The program demonstrates how pointers to objects can be used as a means of passing objects as parameters. It also demonstrates an implementation of a finite state machine
+to control the sequence of illumination of the red, green and blue LEDs.
+
+When the program starts, it creates a number of pointers to objects, and passes these as parameters to the class RotationRate. The RotationRate class configures callbacks 
+(ISRs) which execute when a time period elapses. This time period is determined by the analog voltage on pin A0 (the left-hand potentiometer on the Application Shield).
+
+The main function repeatedly calls the method 'Sample' which records the most recent value of the ADC. This is stored within the class and is used in the calculation of the 
+period of the timeout interrupt.
+
+Acknowledgements to Dr P N Green for the provision of this example code
+
+*/
+
+#include "mbed.h"                                   //Include the Mbed libraries
+
+class LED                                           //Begin LED class definition
+{
+
+protected:                                          //Protected (Private) data member declaration
+    DigitalOut outputSignal;                        //Declaration of DigitalOut object
+    bool status;                                    //Variable to recall the state of the LED
+
+public:                                             //Public declarations
+    LED(PinName pin) : outputSignal(pin)
+    {
+        off();   //Constructor - user provides the pin name, which is assigned to the DigitalOut
+    }
+
+    void on(void)                                   //Public member function for turning the LED on
+    {
+        outputSignal = 0;                           //Set output to 0 (LED is active low)
+        status = true;                              //Set the status variable to show the LED is on
+    }
+
+    void off(void)                                  //Public member function for turning the LED off
+    {
+        outputSignal = 1;                           //Set output to 1 (LED is active low)
+        status = false;                             //Set the status variable to show the LED is off
+    }
+
+    void toggle(void)                               //Public member function for toggling the LED
+    {
+        if (status)                                 //Check if the LED is currently on
+            off();                                  //Turn off if so
+        else                                        //Otherwise...
+            on();                                   //Turn the LED on
+    }
+
+    bool getStatus(void)                            //Public member function for returning the status of the LED
+    {
+        return status;                              //Returns whether the LED is currently on or off
+    }
+};
+
+
+class Potentiometer                                 //Begin Potentiometer class definition
+{
+private:                                            //Private data member declaration
+    AnalogIn inputSignal;                           //Declaration of AnalogIn object
+    float VDD, currentSampleNorm, currentSampleVolts; //Float variables to speficy the value of VDD and most recent samples
+
+public:                                             // Public declarations
+    Potentiometer(PinName pin, float v) : inputSignal(pin), VDD(v) {}   //Constructor - user provided pin name assigned to AnalogIn...
+                                                                        //VDD is also provided to determine maximum measurable voltage
+    float amplitudeVolts(void)                      //Public member function to measure the amplitude in volts
+    {
+        return (inputSignal.read()*VDD);            //Scales the 0.0-1.0 value by VDD to read the input in volts
+    }
+    
+    float amplitudeNorm(void)                       //Public member function to measure the normalised amplitude
+    {
+        return inputSignal.read();                  //Returns the ADC value normalised to range 0.0 - 1.0
+    }
+    
+    void sample(void)                               //Public member function to sample an analogue voltage
+    {
+        currentSampleNorm = inputSignal.read();       //Stores the current ADC value to the class's data member for normalised values (0.0 - 1.0)
+        currentSampleVolts = currentSampleNorm * VDD; //Converts the normalised value to the equivalent voltage (0.0 - 3.3 V) and stores this information
+    }
+    
+    float getCurrentSampleVolts(void)               //Public member function to return the most recent sample from the potentiometer (in volts)
+    {
+        return currentSampleVolts;                  //Return the contents of the data member currentSampleVolts
+    }
+    
+    float getCurrentSampleNorm(void)                //Public member function to return the most recent sample from the potentiometer (normalised)
+    {
+        return currentSampleNorm;                   //Return the contents of the data member currentSampleNorm  
+    }
+
+};
+
+
+class Sequencer                                     //Begin Sequencer class definition
+{
+
+private:                                            //Private data member declaration
+    typedef enum {None, Red, Green, Blue} LEDColourType;    //enum (user-defined type) that records the state of the LED - red,green,blue,off
+    LEDColourType state;                                    //Use the enum to define 'state' which holds the current state of the sequencer
+    LED red, green, blue;                                   //Declare three objects of class LED, which refer to the red, green and blue LEDs on the application shield
+
+public:                                             //Private data member declaration
+    Sequencer(PinName p1, PinName p2, PinName p3) : //Constructor - receives values of the GPIO pins for each LED and configures the LED classes accordingly.
+        red(p1), green(p2), blue(p3)
+    {
+        state = None;                               //Constructor code - initialises the value of 'state' to be 'None'
+    }
+
+    void sequence(void)                             //Sequence function - used to determine current state, and advance to the next state
+    {
+        switch (state) {                            //Determine current value of 'state'...
+            case (Red) :                                // ... if 'Red' then ...
+                red.off();                                  // ... turn it off.
+                green.on();                                 // Turn on the green LED...
+                state = Green;                              // ... and update the state to 'Green' (i.e. green light on)
+                break;                              // Escape the 'switch' statement
+            case (Green) :                              // ... if 'Green' then ...
+                green.off();                                // ... turn it off.
+                blue.on();                                  // Turn on the blue LED...
+                state = Blue;                               // ... and update the state to 'Blue' (i.e. blue light on)
+                break;                              // Escape the 'switch' statement
+            case (Blue) :                               // ... if 'Blue' then ...
+                blue.off();                             // ... turn it off.   
+                red.on();                               // Turn on the red LED...    
+                state = Red;                            // ... and update the state to 'Blue' (i.e. blue light on)
+                break;                              // Escape the 'switch' statement
+            default :                               // If any other state i.e. 'None' or something unexpected has happened...
+                green.off();                            //Turn off the green and blue LEDs
+                blue.off();
+                red.on();                               //...turn on the RED LED. We are now in a stable state (Red)
+                state = Red;                            //Update the state accordingly.
+        }
+    }
+};
+
+
+class RotationRate                                  //Begin RotationRate class definition                                  
+{
+private:                                            //Private data member declaration
+    const float smin, smax, fmin, fmax;             //Define values for voltage-freq relationship
+    float gdt, incpt, period;                       //Define values for the gradient, intercept and period
+    Timeout to;                                     //Declare an object of class Timeout 
+    Sequencer* seq;                                 //Declare a pointer to an object of type Sequencer
+    Potentiometer* pot;                             //Declare a pointer to an object of type Potentiometer
+
+    float calc_gdt(void)                            //Private member function to calculate the gradient of linear voltage-frequency relationship
+    {
+        return (fmax-fmin)/(smax-smin);             //Return dy/dx
+    }
+
+    float calc_incpt(void)                          //Private member function to calculate the intercept of linear voltage-frequency relationship
+    {
+        return (fmax - gdt*smax);                   //Return intercept
+    }
+
+public:                                             //Public data member declaration
+    RotationRate(Potentiometer* p,
+                 Sequencer* s,
+                 float xmn, float xmx, float ymn, float ymx) //Constructor passes objects as pointers for Potentiometer and Squencer, and fixed values for the 
+        : pot(p), seq(s), smin(xmn), smax(ymx), fmin(ymn), fmax(ymx) //limits of voltage and frequency. These are used to initialise the data members of the class
+    {
+        gdt = calc_gdt();                                               //As part of constructor code: Calculate gradient
+        incpt = calc_incpt();                                           //Calculate intercept
+        to.attach(callback(this, &RotationRate::updateRate), 0.01);     //Attach a timeout which calls the member function updateRate after 10ms (initially)
+
+    };
+
+    void updateRate(void)                           //Public member function for setting the update rate - called as ISR from timeout
+    {
+        seq->sequence();                            //Executes the member function 'sequence' to determine the next state.
+        period = 1.0f/(gdt*pot->getCurrentSampleVolts() + incpt);       //Calculate the period of the timeout interrupt based on the most recent value of the ADC
+        to.attach(callback(this, &RotationRate::updateRate), period/3.0f); //Attach callback to updateRate when the time period elapses
+    }
+};
+
+
+int main(void)                                      //Begin main function - program starts executing here
+{
+
+    Potentiometer* leftHand = new Potentiometer(A0, 3.3);   //Create a pointer to an object of type potentiometer, the left hand potentiometer is being used (A0)
+    Sequencer* s = new Sequencer(D5, D9, D8);               //Create a pointer to an object of type sequencer, the red, green and blue LEDs are passed as parameters
+    RotationRate r(leftHand, s, 0.0, 3.3, 1.0, 5.0);        //Create an object of type RotationRate, to which the pointers to objects are passed, and the values of 0 to Vdd (x) and 1 to 5 (y) 
+
+    while (true) {                                  //Infite while loop - important to ensure that the program continues to execute
+        leftHand->sample();                         //Call the member function 'sample' in 'leftHand'. This ensures that an up-to-date value is stored in the class' data member when it is needed
+        wait(0.01);                                 //Delay for 10ms before looping
+    }
+}
