@@ -1,0 +1,25 @@
+/*
+EEEN20011 - Lecture 7 Example Program 2 - Static Variables
+
+This program is not designed to run on the Nucleo board. It will run on a PC-based C++ compiler.
+You may wish to modify this program to run on the Nucleo, using the LCD to output the printf statements.
+
+The code illustrates the operation of a static variable. The variable is initialised on the first occasion when myFunction() is executed, however remembers its previous value for subsequent function calls.
+Removing the 'static' modifier would result in the variable being declared each time myFunction was executed, and "Counter value is: 0" would be printed for each function call.
+
+*/
+
+#include<iostream>
+
+void myFunction(void) {								//Declared function myFunction()
+	static int counter = 0;							//Declaration of static variable
+	printf("Counter value is: %u \n", counter);		//Prints the value of counter
+	counter++;										//Increments counter
+}
+
+int main() {										//Main function
+
+	myFunction();									//Calls myFunction three times
+	myFunction();
+	myFunction();
+}
