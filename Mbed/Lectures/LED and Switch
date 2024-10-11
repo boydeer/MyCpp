@@ -1,0 +1,62 @@
+/*
+Mbed Application Shield
+STM32F401RE Nucleo
+Build-Targe : NUCLEO-F401RE
+
+Task 1: The Joystick Class
+Button / LED Colour
+None / None
+Up / Red
+Down / Green
+Left / Blue
+Right / Yellow
+Fire / White, 2Hz
+*/
+
+#include "mbed.h"
+
+DigitalOut red_led(D5);
+DigitalOut blue_led(D8);
+DigitalOut green_led(D9);
+
+class Joystick {
+private:
+    DigitalIn up, down, left, right, fire;
+public:
+    Joystick(PinName u, PinName d, PinName l, PinName r, PinName f)
+    : up(u), down(d), left(l), right(r), fire(f) {}
+    bool upPressed(void) {return up;} 
+    bool downPressed(void) {return down;}
+    bool leftPressed(void) {return left;} 
+    bool rightPressed(void) {return right;}
+    bool firePressed(void) {return fire;}
+};
+
+int main() {
+
+    Joystick joystick(A2, A3, A4, A5, D4);
+
+    while (true){
+
+        red_led = 1;
+        blue_led = 1;
+        green_led = 1;
+
+        if(joystick.upPressed()){
+            red_led = 0;
+        } else if(joystick.downPressed()){
+            green_led = 0;
+        } else if (joystick.leftPressed()){
+            blue_led = 0;
+        } else if (joystick.rightPressed()){
+            green_led = red_led = 0;
+        } else if (joystick.firePressed()){
+            red_led = 0; green_led = 0; blue_led = 0;
+            wait(0.5);
+            red_led = 1; green_led = 1; blue_led = 1;
+            wait(0.25);
+        }
+        
+    }
+    
+}
