@@ -1,0 +1,28 @@
+/*
+EEEN20011 - Lecture 14 Example Program 1
+
+This program uses the Nucleo-64 board and the Application Shield.
+The program starts a timer and repeatedly updates the LCD screen with the elapsed time
+
+The C12832 library is required - please see the instructions provided
+for advice on how to include this in your project
+
+*/
+
+#include "mbed.h"
+#include "C12832.h"                                     //Imports the library for the LCD screen
+
+C12832 lcd(D11, D13, D12, D7, D10);                     //Creates an LCD object from the LCD library
+
+Timer my_timer;                                         //Create a timer object
+
+int main()
+{
+
+    my_timer.start();                                   //Start the timer running
+
+    while(1) {
+        lcd.locate(20,0);                               //Locate at (20,0)
+        lcd.printf("Time = %f s", my_timer.read() );    //Print the elapsed time on the LCD screen
+    }
+}
