@@ -1,0 +1,54 @@
+/*
+EEEN20011 - Lecture 14 Example Program 2
+
+This program uses the Nucleo-64 board and the Application Shield.
+
+The program uses a Ticker interrupt to repeatedly toggle the red LED
+on the Nucleo Application Shield
+
+Although the red_led object could be updated in the ISR, a variable is used
+instead to illustrate a situation where the volatile modifier is needed.
+As the state of output_value is updated in the ISR, there is a danger
+that the compiler will assume that the value remains at 0 in main(), and
+might replace:
+
+    led_led.write(output_value);
+
+with
+
+    led_led.write(0);
+
+By declaring the variable as volatile, we inform the compiler not to optimise it out
+
+*/
+
+#include "mbed.h"
+
+Ticker my_ticker;                       //Create a Ticker object
+DigitalOut red_led(D5);                 //Creates a DigitalOut attached to the red LED
+
+volatile int output_value;              //Volatile integer to hold the state of the LED
+
+void toggleISR()                        //Callback function (ISR) for Ticker
+{
+    if (output_value == 1) {            //Checks on the value of the status variable...
+        output_value = 0;               //...and toggles the output accordingly
+    } else {
+        output_value = 1;
+    }
+}
+
+int main()
+{
+
+    output_value = 0;                   //Initialise output_variable to 0
+
+    my_ticker.attach(&toggleISR,1.0);   //Attach an interrupt to the ticker, with a period of 1 s
+                                        //The address of toggleISR() is passed as a parameter
+
+    while(1) {
+
+        red_led.write(output_value);    //Update the DigitalOut with the latest output_value
+
+    }
+}
