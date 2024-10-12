@@ -1,0 +1,70 @@
+/*
+EEEN20011 - Lecture 15 Example Program 1 - Inheritance
+
+This program is not designed to run on the Nucleo board. It will run on a PC-based C++ compiler.
+You may wish to modify this program to run on the Nucleo, using the LCD to output the printf statements.
+
+This code defines a base class called simple polygon that stores a shape's length and width. It works on the assumption that we can describe a series of polygons according to these characteristics.
+
+Several derived classes are declared: Rectangle, EquilateralTriangle and Ellipse - each of these inherit from SimplePolygon
+
+The idea is that each of these derived classes can make use of the existing functions to store, set and get lengths and widths. The derived classes are able to apply specific formulae which calculate the area of each shape as a function of the length and width parameters
+
+The main() function contains some code which shows how to interact with the class. It may be modified to create
+different instances of the object, and to explore the class in more detail.
+
+*/
+
+
+
+#include<iostream>
+
+class SimplePolygon {														//Base class definition
+    
+    public:																	//These parameters are public:
+        SimplePolygon(float length, float width) : l(length), w(width) {};	//Constructor for initialising length and width
+        SimplePolygon(float length) : l(length), w(length) {};				//Second constructor for initialising equal length and width
+        
+        void setLength(float length) {l=length;}							//Modifier function for length
+        void setWidth(float width) {w = width;}								//Modifier function for width
+        float getLength (void) const {return l;}							//Const selector function for length
+        float getWidth (void) const {return w;}								//Const selector function for width
+
+    protected:																//These parameters are protected:
+        float l;															//Data member for length										
+        float w;															//Data member for width
+
+};
+
+class Rectangle: public SimplePolygon {										//Rectangle class - inherits from SimplePolygon
+    public:
+        Rectangle(float length, float width): SimplePolygon(length,width){};//Constructor for Rectangle
+        float getArea() { return w*l;}										//Calculates area of a quadrilateral
+};
+
+class EquilateralTriangle: public SimplePolygon {							//EqualiteralTriangle class - inherits from SimplePolygon
+    public:
+        EquilateralTriangle(float length, float width): SimplePolygon(length,width){};	//Constructor for EqualiteralTriangle
+        float getArea() { return (0.5*(w*l));}								//Calculates area of a triangle
+};
+
+class Ellipse: public SimplePolygon {										//Ellipse class - inherits from SimplePolygon
+    public:
+        Ellipse(float length, float width): SimplePolygon(length,width){};	//Constructor for Ellipse
+        float getArea() { return (3.141*(0.5*w)*(0.5*l));}					//Calculates area of an ellipse
+};
+
+
+
+int main(void) {
+
+    Rectangle rect1(3,4);								//Declare an object of type Rectangle
+    printf("Shape area is: %f\n", rect1.getArea());		//Call quadrilateral area function
+    EquilateralTriangle tri1(3,4);						//Declare an object of type EquilateralTriangle
+    printf("Shape area is: %f\n", tri1.getArea());		//Call triangle area function
+    Ellipse ell1(3,4);									//Declare an object of type Ellipse
+    printf("Shape area is: %f\n", ell1.getArea());		//Call ellipse area function
+    ell1.setLength(1.5);								//Execute inherited member function setLength
+    printf("Shape area is: %f\n", ell1.getArea());		//Call ellipse area function
+
+}
