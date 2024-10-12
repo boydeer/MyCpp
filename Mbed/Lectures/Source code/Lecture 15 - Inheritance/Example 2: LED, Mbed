@@ -1,0 +1,128 @@
+/*
+EEEN20011 - Lecture 15 Example Program
+
+This program uses the Nucleo-64 board and the Application Shield.
+
+NOTE - This example uses an LED flashing at 2 Hz. This may be unsuitable for some
+students without further modification of the output type or time period
+
+The program uses inheritance to make use of an existing LED class (see previous
+example programs). This existing class is able to turn an LED on, or off, and is also
+able to recall the previous state - thereby also allowing for a toggle function.
+
+The new (derived) class adds timer functionality to create a countdown timer. New
+member functions for starting/stopping the timer have been added, in addition to
+a selector function which is able to poll whether the timer is running.
+
+When the timer is started, the blue LED is turned off for hte specified time period.
+When the time elapses, the LED is turned on; this functionality make use of the Timeout
+API. During the countdown period, the LED is repeatedly flashed to show that the timer is
+running; this functionality makes use of the Ticker API. The ticker interrupt is attached
+in the start() method, and detached in the endTimerISR() method.
+
+It should be noted that the entire program is interrupt driven - the main() while loop is empty.
+
+*/
+
+
+#include "mbed.h"
+
+//The LED class is unchanged from the previous example
+
+class LED
+{
+
+protected:
+    DigitalOut outputSignal;
+    bool status;
+
+public:
+    LED(PinName pin) : outputSignal(pin)
+    {
+        off();
+    }
+
+    void on(void)
+    {
+        outputSignal = 0;
+        status = true;
+    }
+
+    void off(void)
+    {
+        outputSignal = 1;
+        status = false;
+    }
+
+    void toggle(void)
+    {
+        if (status)
+            off();
+        else
+            on();
+    }
+
+    bool getStatus (void) const
+    {
+        return status;
+    }
+};
+
+
+//This class is new, and implements the timer functionality, whilst inheriting
+//the LED functionality.
+
+class CountdownTimer : public LED       // Class declaration with inheritance
+{
+private:                                //The following are private contents:
+
+    float countdown_time;               //Variable to hold the timer period
+    Timeout countdown;                  //Declaration of Timeout object for the countdown
+    Ticker timer_running;               //Declaration of Ticker object for LED flashing
+
+    void endTimerISR()                  //ISR for end of countdown time period
+    {
+        timer_running.detach();         //Detaches the Ticker - stops LED flash
+        on();                           //Turns the LED on (inherited function)
+        running=false;                  //Update state to show the timer is not running
+    }
+
+
+public:                                 //The following are public contents:
+    bool running;                       //The variable that describes the run state
+    CountdownTimer(PinName pin, float time) : LED(pin), countdown_time(time) //Constructor
+    {
+        running = false;                //Class initialised with timer state = not running
+    }
+
+    void start()                        //Member function to start timer
+    {
+            //Attach callback to the Ticker object (Inherited toggle function) and 0.25 s period
+        timer_running.attach(callback(this, &LED::toggle), 0.25);
+            //Attach callback to Timeout object - calls endTimerISR() when countdown time reached
+        countdown.attach(callback(this,&CountdownTimer::endTimerISR), countdown_time);
+            //Sets timer running state to true
+        running = true;
+    }
+};
+
+//Main code begins
+
+InterruptIn button(D4);                //Create InterruptIn object attached to centre pin
+CountdownTimer myTimer(D8,10.0);       //Create counter object with blue LED (D8) and 10 s period
+
+void timerStartISR()                   //ISR for button press
+{
+    if(myTimer.running == false) {     //Checks if the timer is already running
+        myTimer.start();               //If it isn't then the timer is started
+    }
+}
+
+
+int main()
+{
+    button.rise(&timerStartISR);       //Attach rising edge interrupt to centre pin
+
+    while (1) {                        //Main while loop is empty - the program is interrupt driven
+    }
+}
