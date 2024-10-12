@@ -1,0 +1,43 @@
+/*
+EEEN20011 - Lecture 10 Example Program 2
+
+This program uses the Nucleo-64 board and the Application Shield.
+
+The program toggles the red led every 5 seconds
+
+A 'rising-edge' interrupt is attached to the centre pin of the joystick.
+When button press is detected the interrupt service routine pressedISR()
+is executed. This toggled the green LED.
+
+The interrupt can be generated at any point in the execution of the program,
+including during the 5 second delay.
+
+*/
+
+#include "mbed.h"
+
+InterruptIn button(D4);         //Creates a DigitalIn attached to the 
+                                //centre pin of the joystick
+
+DigitalOut red_led(D5);         //Creates DigitalOuts attached to
+DigitalOut green_led(D9);       //the red and green LEDs
+
+void pressedISR()               //The interrupt service routine (ISR)
+{
+    green_led = !green_led;     //Toggle the green LED when the ISR is called
+}
+
+
+int main()  {
+    
+    button.rise(&pressedISR);   //Attach a rising edge interrupt to the button
+                                //The address of the ISR is passed as a parameter
+    
+    green_led = 1;              //Turn green LED off at start-up
+    red_led = 0;                //Turn red LED on at start-up
+
+    while (1) {
+        red_led = !red_led;     //Toggles red LED
+        wait(5.00);             //Wait for 5 seconds
+    }
+}
