@@ -1,0 +1,44 @@
+/*
+EEEN20011 - Lecture 10 Example Program 1
+
+This program uses the Nucleo-64 board and the Application Shield.
+
+The program toggles the red led every 5 seconds
+After 5 second has elapsed, it checks if the centre pin of the joystick is pressed
+When the program detects that the button has been pressed the green LED is toggled
+
+The program will only respond to the push button if the button press is detected
+at the end of the wait period. If the button is pressed during the 'wait(5.00)'
+statement, then the green LED will not toggle
+
+It would be possible to poll the button more frequently, but this would make
+it harder to maintain the 5 second toggling of the red LED.
+It would also be wasteful of resources to check repeatedly.
+
+*/
+
+#include "mbed.h"                       //Imports mbed libraries
+
+DigitalIn button(D4);                   //Creates a DigitalIn attached to 
+                                        //the centre pin of the joystick
+                                        
+DigitalOut red_led(D5);                 //Creates DigitalOuts attached to
+DigitalOut green_led(D9);               //the red and green LEDs
+
+
+int main()
+{
+
+    green_led = 1;                      //Turn green LED off at start-up
+    red_led = 0;                        //Turn red LED on at start-up
+
+    while (1) {                 
+        red_led = !red_led;             //Toggles red LED
+        wait(5.00);                     //Wait for 5 seconds
+
+        if (button.read() == 1) {       //Check for button press
+            green_led = !green_led;     //Toggles green LED on button press
+        }
+
+    }
+}
