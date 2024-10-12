@@ -1,0 +1,50 @@
+/*
+EEEN20011 - Lecture 14 Example Program 3
+
+This program uses the Nucleo-64 board and the Application Shield.
+
+The program uses a Timeout interrupt to turn off an LED for a 5 s period
+
+An InterruptIn interrupt is attached to the centre pin of the joystick. The address of function
+buttonISR() is passed as a parameter when the 'rising-edge' interrupt is assigned.
+
+
+When buttonISR() executes, the LED is turned off and a Timeout interrupt is attached with a period
+of 5 seconds. The address of the function TimeoutISR() is passed as a parameter.
+TimeoutISR() turns the red LED back on when it is called.
+
+*/
+
+
+#include "mbed.h"
+
+Timeout my_timeout;             //Create a Timeout object
+InterruptIn centre_pin(D4);     //Create an InterruptIn object attached to the centre button of the joystick
+DigitalOut red_led(D5);         //Create a DigitalOut object attached to the red LED
+
+void timeoutISR()               //Callback function (ISR) for the Timeout interrupt
+{
+
+    red_led = 0;                //Turns the red LED on after the specified time period
+
+}
+
+
+void buttonISR()                        //Callback function (ISR) for the InteruptIn rising-edge interrupt
+{
+
+    red_led=1;                          //Turns the LED off
+    my_timeout.attach(&timeoutISR,5.0); //Start a 5 s timer and attach the timeoutISR() function to run when t=5 s
+}
+
+
+
+int main()
+{
+
+    centre_pin.rise(&buttonISR);//Attach an ISR to run when the centre button is pressed
+
+    while(1) { }                //Notice that the while loop is empty. All of the work is being done with interrupts
+
+
+}
