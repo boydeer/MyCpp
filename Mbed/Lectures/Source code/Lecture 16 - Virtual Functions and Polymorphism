@@ -1,0 +1,76 @@
+/*
+EEEN20011 - Lecture 16 Example Program 1 - Polymorphism
+
+This program is not designed to run on the Nucleo board. It will run on a PC-based C++ compiler.
+You may wish to modify this program to run on the Nucleo, using the LCD to output the printf statements.
+
+The code is a slight modification of that in the Lecture 15 Example program 1. The main difference is that a member function has been added to SimplePolygon called getArea()
+This purposefully has the same name as the derived classes. Under normal circumstances, the function declaration in the derived class would override the base class definition. 
+However, when using a pointer to an object of the base class type, the function in the base class will be executed, unless the function is declared as 'virtual'.
+A virtual declaration signals to the compiler that this function expects to be overridden by a derived class, and in that case the derived function will be executed.
+
+In the example code below the function myPolygonptr->getArea() is called before an object of the derived class Rectangle has been created. In this case the original function has been executed.
+The same function is then called once again after a Rectangle object has been created. In this case the Rectangle's version of the getArea() function is called.
+By running the example code with and without the 'virtual' modifier you will be able to observe this action.
+
+The main() function contains some code which shows how to interact with the class. It may be modified to create
+different instances of the object, and to explore the class in more detail.
+
+*/
+
+
+
+#include<iostream>
+
+class SimplePolygon {														//Base class definition
+    
+    public:																	//These parameters are public:
+        SimplePolygon(float length, float width) : l(length), w(width) {};	//Constructor for initialising length and width
+        SimplePolygon(float length) : l(length), w(length) {};				//Second constructor for initialising equal length and width
+        
+        void setLength(float length) {l=length;}							//Modifier function for length
+        void setWidth(float width) {w = width;}								//Modifier function for width
+        float getLength (void) const {return l;}							//Const selector function for length
+        float getWidth (void) const {return w;}								//Const selector function for width
+
+			//A new function has been added which shares the same name as that in the derived classes
+		virtual float getArea() {printf("For a shape to have an area it must have a geometry!\n"); return 0.0;}
+
+    protected:																//These parameters are protected:
+        float l;															//Data member for length										
+        float w;															//Data member for width
+
+};
+
+class Rectangle: public SimplePolygon {										//Rectangle class - inherits from SimplePolygon
+    public:
+        Rectangle(float length, float width): SimplePolygon(length,width){};//Constructor for Rectangle
+        float getArea() { return w*l;}										//Calculates area of a quadrilateral
+};
+
+class EquilateralTriangle: public SimplePolygon {							//EqualiteralTriangle class - inherits from SimplePolygon
+    public:
+        EquilateralTriangle(float length, float width): SimplePolygon(length,width){};	//Constructor for EqualiteralTriangle
+        float getArea() { return (0.5*(w*l));}								//Calculates area of a triangle
+};
+
+class Ellipse: public SimplePolygon {										//Ellipse class - inherits from SimplePolygon
+    public:
+        Ellipse(float length, float width): SimplePolygon(length,width){};	//Constructor for Ellipse
+        float getArea() { return (3.141*(0.5*w)*(0.5*l));}					//Calculates area of an ellipse
+};
+
+
+
+int main(void) {
+    
+    SimplePolygon* myPolygonptr;						//Create a pointer of type SimplePolygon
+    SimplePolygon myPolygon(3,3);						//Create an object, myPolygon, of type SimplePolygon
+    myPolygonptr = &myPolygon;							//Set the pointer to equal the address of myPolygon
+    printf("Area is: %f \n",myPolygonptr->getArea());	//Print the area of the function, as in SimplePolygon
+
+    Rectangle rect1(2,2);								//Create an object, rect1, of type Rectangle
+    myPolygonptr = &rect1;								//Set the pointer to equal the address of rect1
+    printf("Area is: %f \n", myPolygonptr->getArea());	//Print the area of the function, now bound to that in Rectangle
+
+}
